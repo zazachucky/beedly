@@ -1,6 +1,6 @@
 import { Box, Image, Spinner } from "grommet";
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Button from "../components/Button";
 import { StyledHr, StyledText } from "../components/Common";
 import { moneyFormat } from "../stores/modules/basicInfo";
@@ -9,82 +9,27 @@ import { BackButton } from "./ProductRegister";
 import { postPersonalPay, postSpecialPay } from "../utils/apis/PayAPI";
 import beforeIcon from "../assets/img/arrow-left.svg";
 export const PurchaseDetail = () => {
-  const params = new URLSearchParams(window.location.search);
+  // const params = new URL(window.location.href).searchParams;
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const [user, setUser] = useState();
   const [product, setProduct] = useState();
   const navigate = useNavigate();
-  let success =
-    location.state !== undefined
-      ? location.state.success
-      : params.get("imp_success");
-  let errorMsg =
-    location.state !== undefined
-      ? location.state.errorMsg
-      : params.get("error_msg");
-  let merchantUid =
-    location.state !== undefined
-      ? location.state.merchantUid
-      : params.get("merchant_uid");
-  let soldId =
-    location.state !== undefined
-      ? location.state.soldId
-      : merchantUid.split("_")[3];
-  let auctionType =
-    location.state !== undefined
-      ? location.state.auctionType
-      : merchantUid.split("_")[0];
+  let { success } = location.state;
+  let { errorMsg } = location.state;
+  let { merchantUid } = location.state;
+  // let { soldId } = location.state;
+  const { soldId } = useParams();
+  let { auctionType } = location.state;
   // auctionType + "_order_no_" + soldId,
 
   useEffect(() => {
-    console.log(success + ", " + errorMsg + ", " + soldId);
-    if (success === true) {
-      if (location.state === undefined) {
-        if (auctionType === "P")
-          postPersonalPay(
-            soldId,
-            (response) => {
-              console.log("결제 완료 API 호출 !!!", response);
-              navigate(`/purchaseDetail/${soldId}`, {
-                state: {
-                  error_msg: errorMsg,
-                  merchant_uid: merchantUid,
-                  success: success,
-                  soldId: soldId,
-                  auctionType: auctionType,
-                },
-              });
-            },
-            (fail) => {
-              console.log(fail);
-            }
-          );
-        else if (auctionType === "S")
-          postSpecialPay(
-            soldId,
-            (response) => {
-              console.log("결제 완료 API 호출 !!!", response);
-              navigate(`/purchaseDetail/${soldId}`, {
-                state: {
-                  error_msg: errorMsg,
-                  merchant_uid: merchantUid,
-                  success: success,
-                  soldId: soldId,
-                  auctionType: auctionType,
-                },
-              });
-            },
-            (fail) => {
-              console.log(fail);
-            }
-          );
-      } else {
-        if (loading) getPurchaseInfo();
-      }
+    if (success === "true" || success === true) {
+      if (loading) getPurchaseInfo();
     } else {
       setLoading(false);
     }
+
     return () => setLoading(false);
   });
   const getPurchaseInfo = () => {
@@ -108,10 +53,12 @@ export const PurchaseDetail = () => {
     );
   };
 
+  const goMyPage = () => {
+    navigate("/mypage");
+  };
   const goBack = () => {
     navigate(-1);
   };
-
   // return <div>{success + ", " + errorMsg + ", " + soldId}</div>;
   if (loading) return <Spinner />;
   else {
@@ -137,7 +84,7 @@ export const PurchaseDetail = () => {
               padding: "0px 10px",
             }}
           >
-            <img alt="이전" src={beforeIcon} onClick={goBack} />
+            <img alt="이전" src={beforeIcon} onClick={goMyPage} />
             <h4>상세구매내역</h4>
             <h4 style={{ visibility: "hidden" }}>dd</h4>
           </div>
@@ -146,45 +93,87 @@ export const PurchaseDetail = () => {
             <Box>
               <Image src={product.productImgDtos[0]} />
             </Box>
-            <Box>
-              <StyledText text="결제 정보" size="20px" weight="bold" />
-            </Box>
-            {/*배송지 정보 */}
-            <StyledText text="배송지정보" weight="bold" size="16px" />
-            <Box>
-              <StyledText text="주소" />
-              <StyledText text={user.userAddr} />
-              <StyledHr width="100%" color="#A1A1A1" />
-            </Box>
-            <Box>
-              <StyledText text="이름" />
-              <StyledText text={user.userName} />
-              <StyledHr width="100%" color="#A1A1A1" />
-            </Box>
-            <Box>
-              <StyledText text="전화번호" />
-              <StyledText text={user.userTel} />
-              <StyledHr width="100%" color="#A1A1A1" />
-            </Box>
-            <Box>
-              <StyledText
-                text={`수수료(5%) ${moneyFormat(
-                  parseInt(product.finalPrice * 0.05)
-                )}`}
-              />
-              <StyledText text={`배송비 4,000`} />
-              <StyledText text="총 결제금액" />
-              <StyledText
-                text={`${moneyFormat(
-                  parseInt(product.finalPrice * 1.05) + 4000
-                )}원`}
-                weight="bold"
-                size="20px"
-              />
-              <StyledHr width="100%" color="#A1A1A1" />
-              <StyledText
-                text={product.paidFlag ? "결제 완료" : "결제 대기중"}
-              />
+            <Box margin="large">
+              {/*배송지 정보 */}
+              <StyledText text="배송지정보" weight="bold" size="16px" />
+              <Box style={{ marginTop: "20px" }}>
+                <StyledText
+                  text="주소"
+                  weight="bold"
+                  style={{ marginBottom: "8px" }}
+                />
+                <StyledText text={user.userAddr} />
+              </Box>
+              <Box style={{ marginTop: "20px" }}>
+                <StyledText
+                  text="이름"
+                  weight="bold"
+                  style={{ marginBottom: "8px" }}
+                />
+                <StyledText text={user.userName} />
+              </Box>
+              <Box style={{ marginTop: "20px" }}>
+                <StyledText
+                  text="전화번호"
+                  weight="bold"
+                  style={{ marginBottom: "8px" }}
+                />
+                <StyledText text={user.userTel} />
+              </Box>
+              <Box
+                margin="small"
+                direction="column"
+                justify="between"
+                style={{ marginTop: "50px" }}
+              >
+                <StyledText text="결제 정보" weight="bold" size="15px" />
+                <Box
+                  direction="column"
+                  justify="between"
+                  height="130px"
+                  align="end"
+                >
+                  <StyledText
+                    text={`수수료(5%) ${moneyFormat(
+                      parseInt(product.finalPrice * 0.05)
+                    )}`}
+                  />
+
+                  <StyledText text={`배송비 4,000`} />
+                  <Box
+                    direction="row"
+                    justify="between"
+                    align="end"
+                    width="80vw"
+                  >
+                    <StyledText text="총 결제금액" weight="bold" />
+                    <StyledText
+                      text={`${moneyFormat(
+                        parseInt(product.finalPrice * 1.05) + 4000
+                      )}원`}
+                      weight="bold"
+                      size="20px"
+                      style={{ color: "red" }}
+                    />
+                  </Box>
+                  <StyledHr
+                    width="100%"
+                    color="#A1A1A1"
+                    style={{ height: "2px" }}
+                  />
+
+                  <StyledText
+                    text={product.paidFlag ? "결제 완료" : "결제 대기중"}
+                  />
+                </Box>
+              </Box>
+              <Box direction="row" justify="center">
+                <Button
+                  BigYellow
+                  children="홈으로 돌아가기"
+                  onClick={goMyPage}
+                />
+              </Box>
             </Box>
           </Box>
         </Box>
